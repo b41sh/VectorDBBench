@@ -36,13 +36,12 @@ class DatabendConfig(DBConfig):
 
 
 class DatabendIndexConfig(BaseModel, DBCaseConfig):
-
     metric_type: MetricType | None = None
     #vector_data_type: str | None = "Float32"  # Data type of vectors. Can be Float32 or Float64 or BFloat16
-    #create_index_before_load: bool = True
-    #create_index_after_load: bool = False
-    M: int | None  # Default in databend in 32
-    efConstruction: int | None  # Default in databend in 128
+    create_index_before_load: bool = True
+    create_index_after_load: bool = False
+    m: int | None  # Default in databend in 32
+    ef_construct: int | None  # Default in databend in 128
 
     def parse_metric(self) -> str:
         if not self.metric_type:
@@ -62,8 +61,14 @@ class DatabendIndexConfig(BaseModel, DBCaseConfig):
 
     def index_param(self) -> dict:
         return {
-            "vector_data_type": self.vector_data_type,
-            "metric_type": self.parse_metric_str(),
             "m": self.m,
+            #"vector_data_type": self.vector_data_type,
+            "metric_type": self.parse_metric_str(),
             "ef_construct": self.ef_construct,
         }
+
+    def search_param(self) -> dict:
+        return {}
+
+    def session_param(self) -> dict:
+        return {}

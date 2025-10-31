@@ -11,32 +11,14 @@ from ....cli.cli import (
     run,
 )
 from .. import DB
-from .config import DatabendHNSWConfig
+from .config import DatabendIndexConfig
 
 
 class DatabendTypedDict(TypedDict):
     password: Annotated[str, click.option("--password", type=str, help="DB password")]
     host: Annotated[str, click.option("--host", type=str, help="DB host", required=True)]
-    port: Annotated[int, click.option("--port", type=int, default=8123, help="DB Port")]
-    user: Annotated[int, click.option("--user", type=str, default="databend", help="DB user")]
-    ssl: Annotated[
-        bool,
-        click.option(
-            "--ssl/--no-ssl",
-            is_flag=True,
-            show_default=True,
-            default=True,
-            help="Enable or disable SSL for Databend",
-        ),
-    ]
-    ssl_ca_certs: Annotated[
-        str,
-        click.option(
-            "--ssl-ca-certs",
-            show_default=True,
-            help="Path to certificate authority file to use for SSL",
-        ),
-    ]
+    port: Annotated[int, click.option("--port", type=int, default=8000, help="DB Port")]
+    user: Annotated[int, click.option("--user", type=str, default="root", help="DB user")]
 
 
 class DatabendHNSWTypedDict(CommonTypedDict, DatabendTypedDict, HNSWFlavor2): ...
@@ -52,16 +34,16 @@ def Databend(**parameters: Unpack[DatabendHNSWTypedDict]):
         db_config=DatabendConfig(
             db_label=parameters["db_label"],
             user=parameters["user"],
-            password=SecretStr(parameters["password"]) if parameters["password"] else None,
+            #password=SecretStr(parameters["password"]) if parameters["password"] else None,
+            password=SecretStr(parameters["password"]),
             host=parameters["host"],
             port=parameters["port"],
-            ssl=parameters["ssl"],
-            ssl_ca_certs=parameters["ssl_ca_certs"],
         ),
-        db_case_config=DatabendHNSWConfig(
-            M=parameters["m"],
-            efConstruction=parameters["ef_construction"],
-            ef=parameters["ef_runtime"],
+        db_case_config=DatabendIndexConfig(
+            metric_type=None,
+            m=parameters["m"],
+            #ef_construct=parameters["ef_construct"],
+            ef_construct=parameters["ef_construction"],
         ),
         **parameters,
     )

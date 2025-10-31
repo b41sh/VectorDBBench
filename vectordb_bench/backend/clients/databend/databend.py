@@ -35,6 +35,8 @@ class Databend(VectorDB):
         self.dim = dim
 
         self.index_param = self.case_config.index_param()
+        self.search_param = self.case_config.search_param()
+        self.session_param = self.case_config.session_param()
 
         self._index_name = "databend_index"
         self._primary_field = "id"
@@ -72,7 +74,8 @@ class Databend(VectorDB):
 
     def _create_connection(self, settings: dict | None, **kwargs) -> BlockingDatabendConnection:
         databend_client = BlockingDatabendClient(
-            f"databend://{self.db_config.user}:{self.db_config.password}@{self.db_config.host}:{self.db_config.port}/{self.db_config.db_name}?sslmode=disable"
+            #f"databend://{self.db_config.user}:{self.db_config.password}@{self.db_config.host}:{self.db_config.port}/{self.db_config.db_name}?sslmode=disable"
+            f'databend://{self.db_config["user"]}:{self.db_config["password"]}@{self.db_config["host"]}:{self.db_config["port"]}/{self.db_config["database"]}?sslmode=disable'
         )
         return databend_client.get_conn()
 
@@ -80,7 +83,7 @@ class Databend(VectorDB):
         assert self.conn is not None, "Connection is not initialized"
         try:
             self.conn.exec(
-                f"DROP VECTOR INDEX IF EXISTS {self._index_name} ON {self.database_name}.{self.table_name}'
+                f"DROP VECTOR INDEX IF EXISTS {self._index_name} ON {self.database_name}.{self.table_name}"
             )
         except Exception as e:
             log.warning(f"Failed to drop index on table {self.database_name}.{self.table_name}: {e}")
@@ -106,7 +109,7 @@ class Databend(VectorDB):
                 f"ON {self.database_name}.{self.table_name} "
                 f'({self._vector_field}) m = {self.index_param["m"]} '
                 f'ef_construct = {self.index_param["ef_construct"]} '
-                f'distance = \'{self.index_param["metric_type"]}\''
+                f'distance = {self.index_param["metric_type"]}'
             )
         except Exception as e:
             log.warning(f"Failed to create Databend vector index on table: {self.table_name} error: {e}")
