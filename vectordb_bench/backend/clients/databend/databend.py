@@ -132,7 +132,14 @@ class Databend(VectorDB):
             raise e from None
 
     def optimize(self, data_size: int | None = None):
-        pass
+        assert self.conn is not None, "Connection is not initialized"
+
+        try:
+            self.conn.exec(f"OPTIMIZE TABLE {self.database_name}.{self.table_name} ALL")
+
+        except Exception as e:
+            log.warning(f"Failed to optimize Databend table: {self.table_name} error: {e}")
+            raise e from None
 
     def _post_insert(self):
         pass
@@ -149,12 +156,12 @@ class Databend(VectorDB):
             rows: List[List[Any]] = []
             for _id, embedding in zip(metadata, embeddings):
                 row: List[Any] = [
-                    _id,
-                    embedding,
+                    str(_id),
+                    str(embedding),
                 ]
                 rows.append(row)
 
-            self.client.stream_load(
+            self.conn.stream_load(
                 f"INSERT INTO {self.database_name}.{self.table_name} VALUES",
                 rows,
             )
@@ -179,7 +186,7 @@ class Databend(VectorDB):
                     f"SELECT {self._primary_field} "
                     f"FROM {self.database_name}.{self.table_name} "
                     f"WHERE {self._primary_field} > {_id} "
-                    f"ORDER BY cosine_distance({self._vector_field}, {query}::Vector({self.dim}) "
+                    f"ORDER BY cosine_distance({self._vector_field}, {query}::Vector({self.dim})) "
                     f"LIMIT {k}",
                 )
                 return [int(row.values()[0]) for row in result]
@@ -187,7 +194,7 @@ class Databend(VectorDB):
             result = self.conn.query_all(
                 f"SELECT {self._primary_field} "
                 f"FROM {self.database_name}.{self.table_name} "
-                f"ORDER BY cosine_distance({self._vector_field}, {query}::Vector({self.dim}) "
+                f"ORDER BY cosine_distance({self._vector_field}, {query}::Vector({self.dim})) "
                 f"LIMIT {k}",
             )
             return [int(row.values()[0]) for row in result]
@@ -197,7 +204,7 @@ class Databend(VectorDB):
                 f"SELECT {self._primary_field} "
                 f"FROM {self.database_name}.{self.table_name} "
                 f"WHERE {self._primary_field} > {_id} "
-                f"ORDER BY l2_distance({self._vector_field}, {query}::Vector({self.dim}) "
+                f"ORDER BY l2_distance({self._vector_field}, {query}::Vector({self.dim})) "
                 f"LIMIT {k}",
             )
             return [int(row.values()[0]) for row in result]
@@ -205,7 +212,7 @@ class Databend(VectorDB):
         result = self.conn.query_all(
             f"SELECT {self._primary_field} "
             f"FROM {self.database_name}.{self.table_name} "
-            f"ORDER BY l2_distance({self._vector_field}, {query}::Vector({self.dim}) "
+            f"ORDER BY l2_distance({self._vector_field}, {query}::Vector({self.dim})) "
             f"LIMIT {k}",
         )
         return [int(row.values()[0]) for row in result]
